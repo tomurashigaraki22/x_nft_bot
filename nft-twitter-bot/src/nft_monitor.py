@@ -11,8 +11,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # TRADEPORT_API_URL = "https://fub.direct/1/5fJOsEAC2ficioqOowQsz3YUhewaNijoUNrU4lJU45YQtaANAql9fHxvOUa0nAjEbFAmQE8piV82fhmOCwbyK53z0ews0ybfWA1_mGE41gU/https/api.indexer.xyz/graphql"
-Botter_NFt = '07a1345f-7020-4b47-9fa8-b9d77cddeedd'
-POLL_INTERVAL = 300 
+# Botter_NFt = '07a1345f-7020-4b47-9fa8-b9d77cddeedd'
+Botter_NFt = '3f7accce-3128-460f-aa9c-e8ab91831af7'
+POLL_INTERVAL = 1000 
 TRADEPORT_API_URL = "https://api.indexer.xyz/graphql"
 # TRADEPORT_API_URL = "https://graphql.tradeport.xyz/"
 
@@ -72,7 +73,7 @@ def fetch_new_listings():
             #change hours = 24 to the nnumber you want to check for new NFTs for eg 24 hours = 24
             #change block_time to the time you want to start checking for new NFTs eg 24 hours ago = 24 hours ag
             "block_time": {
-                "_gt": (datetime.datetime.now(datetime.UTC) - timedelta(hours=24)).isoformat()
+                "_gt": (datetime.datetime.now(datetime.UTC) - timedelta(minutes=60)).isoformat()
             }
         }
     }
@@ -131,10 +132,20 @@ def process_listing(listing):
     # Create and post tweet
     tweet = create_tweet(listing)
     try:
+        # Add delay between tweets to respect rate limits
+        time.sleep(10)  # Wait 1 minute between tweets
         client.create_tweet(text=tweet)
         logger.info(f"Posted tweet for listing {listing['id']}")
     except Exception as e:
-        logger.error(f"Error posting tweet: {e}")
+        logger.error(f"Error posting tweet: {str(e)}")
+        if "429" in str(e):  # Rate limit error
+            logger.info("Rate limit hit, waiting 15 minutes...")
+            time.sleep(900)  # Wait 15 minutes before retrying
+            try:
+                client.create_tweet(text=tweet)
+                logger.info(f"Retry successful for listing {listing['id']}")
+            except Exception as retry_e:
+                logger.error(f"Retry failed: {retry_e}")
 
 def main():
     logger.info("Starting NFT monitor bot")
