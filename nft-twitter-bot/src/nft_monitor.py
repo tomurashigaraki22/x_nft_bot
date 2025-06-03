@@ -206,7 +206,7 @@ def download_and_upload_image(image_url):
         return None
 
 def create_tweet(listing, collection_stats=None):
-    """Create tweet with NFT image and collection stats"""
+    """Create tweet with NFT image URL and collection stats"""
     try:
         botter = listing["nft"]["name"] or f"Token #{listing['nft']['token_id']}"
         
@@ -216,9 +216,11 @@ def create_tweet(listing, collection_stats=None):
         # Convert last sale price from lamports to SUI
         last_sale = listing["nft"]["lastSale"][0]["price"] / 1_000_000_000 if listing["nft"]["lastSale"] else None
         
-        # Get image URL and upload to Twitter
+        # Get image URL and ensure it's a proper URL
         media_url = listing["nft"]["media_url"]
-        media_id = download_and_upload_image(media_url)
+        if media_url.startswith('ipfs://'):
+            ipfs_hash = media_url.replace('ipfs://', '')
+            media_url = f"https://nftstorage.link/ipfs/{ipfs_hash}"
         
         stats_text = ""
         if collection_stats and "collection_stats" in collection_stats:
@@ -235,9 +237,11 @@ def create_tweet(listing, collection_stats=None):
 💰 Price: {price:.2f} SUI
 {f"📉 Last Sale: {last_sale:.2f} SUI" if last_sale else ""}{stats_text}
 
+View NFT: {media_url}
+
 #NFT #Sui #TradePort"""
         
-        return tweet, media_id
+        return tweet, None
     except Exception as e:
         logger.error(f"Error creating tweet: {e}", exc_info=True)
         return None, None
@@ -260,13 +264,13 @@ def process_listing(listing):
     processed_listings.add(listing["id"])
     collection_stats = fetch_collection_stats()
     
-    # Create tweet with media
-    tweet, media_id = create_tweet(listing, collection_stats)
+    # Create tweet
+    tweet, _ = create_tweet(listing, collection_stats)
     
-    if tweet and media_id:
+    if tweet:
         try:
-            # Post tweet with media using v2 client
-            client.create_tweet(text=tweet, media_ids=[str(media_id)])
+            # Post tweet without media
+            client.create_tweet(text=tweet)
             last_tweet_time = current_time
             logger.info(f"Posted tweet for listing {listing['id']}")
         except Exception as e:
@@ -275,7 +279,7 @@ def process_listing(listing):
                 logger.info("Rate limit hit, waiting 15 minutes...")
                 time.sleep(900)
                 try:
-                    client.create_tweet(text=tweet, media_ids=[str(media_id)])
+                    client.create_tweet(text=tweet)
                     last_tweet_time = time.time()
                     logger.info(f"Retry successful for listing {listing['id']}")
                 except Exception as retry_e:
