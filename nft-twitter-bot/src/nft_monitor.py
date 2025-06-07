@@ -221,7 +221,7 @@ def get_working_image_url(ipfs_hash):
     return gateways[0]
 
 def create_tweet(listing, collection_stats=None):
-    """Create tweet with NFT image and collection stats"""
+    """Create tweet with NFT image URL and collection stats"""
     try:
         botter = listing["nft"]["name"] or f"Token #{listing['nft']['token_id']}"
         # Truncate botter name if too long
@@ -256,6 +256,8 @@ def create_tweet(listing, collection_stats=None):
 🆕 New Listing: {botter}
 💰 Price: {price:.2f} SUI
 {f"📉 Last Sale: {last_sale:.2f} SUI" if last_sale else ""}{stats_text}
+
+View NFT: {media_url}
 
 #NFT #Sui #TradePort"""
         # Truncate tweet if needed
