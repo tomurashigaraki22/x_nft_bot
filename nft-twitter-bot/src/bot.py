@@ -1,4 +1,4 @@
-from src.nft_monitor import main
+from nft_monitor import main
 
 class Bot:
     def __init__(self):
