@@ -1,15 +1,13 @@
-nft-twitter-bot
-├── src
-│   ├── bot.py
-│   ├── config.py
-│   ├── nft_monitor.py
-│   ├── twitter_client.py
-│   └── utils
-│       └── helpers.py
-├── tests
-│   ├── __init__.py
-│   ├── test_bot.py
-│   └── test_nft_monitor.py
-├── .env.example
-├── requirements.txt
-└── README.md
+from nft_monitor import main
+
+class Bot:
+    def __init__(self):
+        self.is_running = False
+
+    def run(self):
+        self.is_running = True
+        main()
+
+if __name__ == "__main__":
+    bot = Bot()
+    bot.run()
